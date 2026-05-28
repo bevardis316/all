@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IBNVS Konsultantas</string>
+    <string name="hint_input">Klauskite…</string>
+    <string name="send">Siųsti</string>
+</resources>
