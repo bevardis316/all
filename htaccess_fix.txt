@@ -1,0 +1,83 @@
+RewriteEngine On
+
+# ── HTTPS privalomas ─────────────────────────────────────────────
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── VARTAI: neturintys sesijos → gate.php ────────────────────────
+# Leidžiama be sesijos: gate.php, home.jpg, pav1.png, testui.jpg,
+#   verslui.jpg, index.css, index.min.js, robots.txt, sitemap.xml
+RewriteCond %{REQUEST_URI} !^/gate\.php$
+RewriteCond %{REQUEST_URI} !^/home\.jpg$
+RewriteCond %{REQUEST_URI} !^/pav1\.png$
+RewriteCond %{REQUEST_URI} !^/testui\.jpg$
+RewriteCond %{REQUEST_URI} !^/verslui\.jpg$
+RewriteCond %{REQUEST_URI} !^/index\.css$
+RewriteCond %{REQUEST_URI} !^/index\.min\.js$
+RewriteCond %{REQUEST_URI} !^/robots\.txt$
+RewriteCond %{REQUEST_URI} !^/sitemap\.xml$
+RewriteCond %{REQUEST_URI} !^/api/v1/ai$
+RewriteCond %{HTTP_COOKIE} !ibnvs_gate=.+
+RewriteRule ^ /gate.php [L,R=302]
+
+# ── index.html → index.php (visada, nes index.html neturi sesijos tikrinimo) ──
+RewriteRule ^$ /index.php [L]
+RewriteRule ^index\.html$ /index.php [L,R=301]
+
+# ── URL rewrite taisyklės ────────────────────────────────────────
+RewriteRule ^api/v1/symptoms$  /api/v1/symptoms.php  [L,QSA]
+RewriteRule ^api/v1/diagnose$  /api/v1/diagnose.php  [L,QSA]
+RewriteRule ^api/v1/tree$      /api/v1/tree.php      [L,QSA]
+RewriteRule ^api/v1/kb$        /api/v1/kb.php        [L,QSA]
+RewriteRule ^api/v1/ai$        /api/v1/ai.php        [L,QSA]
+RewriteRule ^api/v1/tts$       /api/v1/tts.php       [L,QSA]
+RewriteRule ^api/v1/labels$       /api/v1/labels.php       [L,QSA]
+RewriteRule ^api/v1/comp_scene3d$ /api/v1/comp_scene3d.php [L,QSA]
+RewriteRule ^map$              /map/index.php         [L,QSA]
+
+Options -Indexes
+
+# ── PHP failų prieigos ribojimas ─────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} \.php$
+RewriteCond %{REQUEST_URI} !^/gate\.php$
+RewriteCond %{REQUEST_URI} !^/index\.php$
+RewriteCond %{REQUEST_URI} !^/check6\.php$
+RewriteCond %{REQUEST_URI} !^/api/v1/[a-z]+\.php$
+RewriteCond %{REQUEST_URI} !^/tool1/(index|login|api)\.php$
+RewriteCond %{REQUEST_URI} !^/kon/(index|api|order)\.php$
+RewriteCond %{REQUEST_URI} !^/diag/diagnose\.php$
+RewriteCond %{REQUEST_URI} !^/map/(index|api)\.php$
+RewriteRule ^ - [R=404,L]
+
+# ── Pavojingi failų tipai ────────────────────────────────────────
+<FilesMatch "\.(backup|bak|sql|sh|log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+    ErrorDocument 403 /404
+</FilesMatch>
+
+<FilesMatch "^(\.ht|\.env)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+    ErrorDocument 403 /404
+</FilesMatch>
+
+# ── Saugumo antraštės ────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "microphone=(self)"
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://maps.googleapis.com https://maps.gstatic.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://maps.googleapis.com; img-src 'self' data: https://*.googleapis.com https://*.gstatic.com; frame-ancestors 'none'"
+</IfModule>
